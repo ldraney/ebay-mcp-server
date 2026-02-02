@@ -2,14 +2,14 @@
 
 ## What This Is
 
-MCP server that wraps every method in `ldraney-ebay-sdk` as an MCP tool. One tool per SDK method, 220 endpoints across 8 APIs.
+MCP server that wraps every method in `ldraney-ebay-sdk` as an MCP tool. One tool per SDK method, 188 tools across 8 APIs.
 
 ## Architecture
 
 ```
 ldraney-ebay-oauth (PyPI)  ← auth
     ↓
-ldraney-ebay-sdk (PyPI)    ← all 8 eBay APIs, 220 endpoints  ✅ DONE
+ldraney-ebay-sdk (PyPI)    ← all 8 eBay APIs, 188 methods  ✅ DONE
     ↓
 ebay-mcp-server (this repo) ← one MCP tool per SDK method
 ```

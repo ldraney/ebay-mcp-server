@@ -5,7 +5,7 @@
 ```
 ldraney-ebay-oauth (PyPI)        ← OAuth 2.0 token management
     ↓
-ldraney-ebay-sdk (PyPI)          ← 8 eBay APIs, 220 endpoints
+ldraney-ebay-sdk (PyPI)          ← 8 eBay APIs, 188 endpoints
     ↓
 ldraney-ebay-mcp-server (PyPI)   ← one MCP tool per SDK method  ← THIS REPO
 ```
@@ -14,17 +14,17 @@ Each layer is a separate PyPI package. Auth and SDK are complete. This repo is t
 
 ## SDK Structure (upstream, already published)
 
-The SDK organizes 220 methods into 8 API classes under 3 domains:
+The SDK organizes 188 methods into 8 API classes under 3 domains:
 
 ```
 EbayClient
 ├── buy_browse          → BuyBrowseApi        (7 methods)
-├── sell_inventory      → SellInventoryApi     (36 methods)
-├── sell_fulfillment    → SellFulfillmentApi   (15 methods)
-├── sell_account        → SellAccountApi       (37 methods)
+├── sell_inventory      → SellInventoryApi     (30 methods)
+├── sell_fulfillment    → SellFulfillmentApi   (14 methods)
+├── sell_account        → SellAccountApi       (35 methods)
 ├── sell_finances       → SellFinancesApi      (8 methods)
-├── sell_marketing      → SellMarketingApi     (82 methods)
-├── sell_feed           → SellFeedApi          (26 methods)
+├── sell_marketing      → SellMarketingApi     (63 methods)
+├── sell_feed           → SellFeedApi          (22 methods)
 └── commerce_taxonomy   → CommerceTaxonomyApi  (9 methods)
 ```
 
@@ -39,20 +39,12 @@ SDK methods follow consistent signatures:
 ```
 src/ebay_mcp_server/
 ├── __init__.py
-├── server.py              ← MCP server setup, client init
+├── server.py              ← MCP server setup, calls register_tools()
 └── tools/
-    ├── __init__.py        ← registers all tool modules
-    ├── buy_browse.py
-    ├── sell_inventory.py
-    ├── sell_fulfillment.py
-    ├── sell_account.py
-    ├── sell_finances.py
-    ├── sell_marketing.py
-    ├── sell_feed.py
-    └── commerce_taxonomy.py
+    └── __init__.py        ← introspects all 8 SDK API classes, registers 188 tools
 ```
 
-One tools file per SDK API class. Each file iterates over the corresponding API class methods and registers them as MCP tools.
+All tool registration is dynamic — `tools/__init__.py` iterates over every SDK API class, extracts method signatures via `inspect`, and registers each as an MCP tool at import time.
 
 ## Tool Naming Convention
 
