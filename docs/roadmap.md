@@ -1,25 +1,25 @@
 # Roadmap
 
 ## Phase 1: Project Scaffolding
-- [ ] `pyproject.toml` with Poetry, entry point, dependencies
-- [ ] `src/ebay_mcp_server/` package structure
-- [ ] Basic MCP server that starts and connects
+- [x] `pyproject.toml` with Poetry, entry point, dependencies
+- [x] `src/ebay_mcp_server/` package structure
+- [x] Basic MCP server that starts and connects
 
 ## Phase 2: Tool Generation
-- [ ] Tool registration pattern (one SDK method → one MCP tool)
-- [ ] Parameter schema extraction from SDK type hints/signatures
-- [ ] Implement tools for all 8 API modules:
-  - [ ] `buy_browse` (7 tools)
-  - [ ] `sell_inventory` (36 tools)
-  - [ ] `sell_fulfillment` (15 tools)
-  - [ ] `sell_account` (37 tools)
-  - [ ] `sell_finances` (8 tools)
-  - [ ] `sell_marketing` (82 tools)
-  - [ ] `sell_feed` (26 tools)
-  - [ ] `commerce_taxonomy` (9 tools)
+- [x] Tool registration pattern (one SDK method → one MCP tool)
+- [x] Parameter schema extraction from SDK type hints/signatures
+- [x] All 8 API modules registered dynamically (188 tools total):
+  - [x] `buy_browse` (7 tools)
+  - [x] `sell_inventory` (30 tools)
+  - [x] `sell_fulfillment` (14 tools)
+  - [x] `sell_account` (35 tools)
+  - [x] `sell_finances` (8 tools)
+  - [x] `sell_marketing` (63 tools)
+  - [x] `sell_feed` (22 tools)
+  - [x] `commerce_taxonomy` (9 tools)
 
 ## Phase 3: Validation
-- [ ] Verify tool count matches SDK method count (220)
+- [ ] Verify tool count matches SDK method count (188)
 - [ ] Test with Claude Desktop configuration
 - [ ] Smoke test key flows (search → get item → create listing)
 

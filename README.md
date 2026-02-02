@@ -1,6 +1,6 @@
 # ebay-mcp-server
 
-MCP server exposing all 220 eBay REST API endpoints as tools. Built on [ldraney-ebay-sdk](https://pypi.org/project/ldraney-ebay-sdk/).
+MCP server exposing all 188 eBay REST API methods as tools. Built on [ldraney-ebay-sdk](https://pypi.org/project/ldraney-ebay-sdk/).
 
 ## Goal
 
@@ -19,12 +19,12 @@ Each SDK method becomes an MCP tool. Auth is handled by `ldraney-ebay-oauth` (tr
 | API | Endpoints | Tools |
 |-----|-----------|-------|
 | Buy Browse | 7 | search, get_item, get_items_by_item_group, etc. |
-| Sell Inventory | 36 | create_offer, publish_offer, bulk_update, etc. |
-| Sell Fulfillment | 15 | get_order, get_orders, issue_refund, etc. |
-| Sell Account | 37 | get_return_policy, create_payment_policy, etc. |
+| Sell Inventory | 30 | create_offer, publish_offer, bulk_update, etc. |
+| Sell Fulfillment | 14 | get_order, get_orders, issue_refund, etc. |
+| Sell Account | 35 | get_return_policy, create_payment_policy, etc. |
 | Sell Finances | 8 | get_transaction, get_payout, etc. |
-| Sell Marketing | 82 | create_campaign, get_ad, update_bid, etc. |
-| Sell Feed | 26 | create_task, get_input_file, download_file, etc. |
+| Sell Marketing | 63 | create_campaign, get_ad, update_bid, etc. |
+| Sell Feed | 22 | create_task, get_input_file, download_file, etc. |
 | Commerce Taxonomy | 9 | get_category_tree, get_category_suggestions, etc. |
 
 ## Prerequisites

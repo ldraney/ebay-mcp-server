@@ -2,7 +2,7 @@
 
 ## The Problem
 
-eBay's REST APIs span 8 services and 220 endpoints. Using them requires reading OpenAPI specs, managing OAuth tokens, and writing HTTP requests by hand. Even with the SDK, you still need to write Python scripts.
+eBay's REST APIs span 8 services and 188 endpoints. Using them requires reading OpenAPI specs, managing OAuth tokens, and writing HTTP requests by hand. Even with the SDK, you still need to write Python scripts.
 
 ## The Solution
 
