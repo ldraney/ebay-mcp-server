@@ -12,8 +12,8 @@ ebay-mcp-server = "ebay_mcp_server.server:main"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-ldraney-ebay-sdk = ">=0.1.0"
-mcp = ">=1.0.0"
+ldraney-ebay-sdk = "^0.1.0"
+mcp = "^1.0.0"
 
 [build-system]
 requires = ["poetry-core"]
