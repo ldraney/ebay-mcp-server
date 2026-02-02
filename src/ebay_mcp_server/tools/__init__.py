@@ -49,9 +49,17 @@ def _annotation_to_type(ann_str: str) -> str:
 
 def _get_client() -> EbayClient:
     """Create an EbayClient from environment variables."""
+    try:
+        client_id = os.environ["EBAY_CLIENT_ID"]
+        client_secret = os.environ["EBAY_CLIENT_SECRET"]
+    except KeyError as e:
+        raise RuntimeError(
+            f"Missing required environment variable {e}. "
+            "Set EBAY_CLIENT_ID and EBAY_CLIENT_SECRET."
+        ) from None
     oauth = EbayOAuthClient(
-        client_id=os.environ["EBAY_CLIENT_ID"],
-        client_secret=os.environ["EBAY_CLIENT_SECRET"],
+        client_id=client_id,
+        client_secret=client_secret,
     )
     sandbox = os.environ.get("EBAY_SANDBOX", "false").lower() in ("1", "true", "yes")
     return EbayClient(oauth, sandbox=sandbox)
@@ -69,9 +77,14 @@ def _make_tool_fn(api_attr: str, method_name: str, params: list[dict]):
             keyword = {}
             for p in params:
                 name = p["name"]
-                if name not in kwargs:
+                val = kwargs.get(name)
+                if val is None and name not in kwargs:
+                    if p["positional"]:
+                        # Preserve positional slot for skipped optional args
+                        if not p["optional"]:
+                            continue
+                        positional.append(None)
                     continue
-                val = kwargs[name]
                 # Parse JSON strings back to dicts/lists for object params
                 if p["type"] == "object" and isinstance(val, str):
                     val = json.loads(val)
@@ -79,6 +92,9 @@ def _make_tool_fn(api_attr: str, method_name: str, params: list[dict]):
                     positional.append(val)
                 else:
                     keyword[name] = val
+            # Trim trailing None values from positional args
+            while positional and positional[-1] is None:
+                positional.pop()
             result = method(*positional, **keyword)
             return json.dumps(result, default=str)
 
@@ -156,8 +172,6 @@ def register_tools(mcp: FastMCP) -> int:
             fn.__annotations__["return"] = str
 
             # Set defaults for optional params
-            import types
-
             defaults = {}
             for p in params:
                 if p["optional"]:
@@ -166,7 +180,7 @@ def register_tools(mcp: FastMCP) -> int:
             if defaults:
                 fn.__kwdefaults__ = defaults
 
-            mcp.tool(name=tool_name, description=doc)(fn)
+            mcp.tool(name=tool_name, description=full_desc)(fn)
             count += 1
 
     return count
