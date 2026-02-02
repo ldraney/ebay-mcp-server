@@ -22,6 +22,8 @@ from ebay_sdk.commerce.taxonomy import CommerceTaxonomyApi
 
 logger = logging.getLogger(__name__)
 
+_MISSING = object()
+
 # Keys must match the attribute names on EbayClient (e.g. client.buy_browse)
 API_MODULES = {
     "buy_browse": BuyBrowseApi,
@@ -89,8 +91,8 @@ def _make_tool_fn(api_attr: str, method_name: str, params: list[dict]):
         keyword = {}
         for idx, p in enumerate(params):
             name = p["name"]
-            val = kwargs.get(name)
-            if val is None and name not in kwargs:
+            val = kwargs.get(name, _MISSING)
+            if val is _MISSING:
                 if p["positional"] and not p["optional"]:
                     raise ValueError(
                         f"Missing required parameter '{name}'"
@@ -115,7 +117,11 @@ def _make_tool_fn(api_attr: str, method_name: str, params: list[dict]):
             pos_args = [None] * (max_idx + 1)
             for idx, val in positional:
                 pos_args[idx] = val
-        result = method(*pos_args, **keyword)
+        try:
+            result = method(*pos_args, **keyword)
+        except Exception as exc:
+            logger.exception("Tool %s.%s failed", api_attr, method_name)
+            return json.dumps({"error": type(exc).__name__, "message": str(exc)})
         return json.dumps(result, default=str)
 
     return tool_fn
