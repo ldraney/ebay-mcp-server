@@ -80,9 +80,10 @@ def _make_tool_fn(api_attr: str, method_name: str, params: list[dict]):
                 val = kwargs.get(name)
                 if val is None and name not in kwargs:
                     if p["positional"]:
-                        # Preserve positional slot for skipped optional args
                         if not p["optional"]:
-                            continue
+                            raise ValueError(
+                                f"Missing required parameter '{name}'"
+                            )
                         positional.append(None)
                     continue
                 # Parse JSON strings back to dicts/lists for object params
