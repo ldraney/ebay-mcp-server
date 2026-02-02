@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "ldraney-ebay-mcp-server"
+version = "0.1.0"
+description = "MCP server exposing all eBay REST API endpoints as tools"
+license = "MIT"
+authors = ["ldraney"]
+readme = "README.md"
+packages = [{include = "ebay_mcp_server", from = "src"}]
+
+[tool.poetry.scripts]
+ebay-mcp-server = "ebay_mcp_server.server:main"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+ldraney-ebay-sdk = ">=0.1.0"
+mcp = ">=1.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
