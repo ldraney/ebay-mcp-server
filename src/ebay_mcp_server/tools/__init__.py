@@ -4,6 +4,7 @@ import inspect
 import json
 import logging
 import os
+import threading
 from typing import Any
 
 from ebay_oauth import EbayOAuthClient
@@ -21,6 +22,7 @@ from ebay_sdk.commerce.taxonomy import CommerceTaxonomyApi
 
 logger = logging.getLogger(__name__)
 
+# Keys must match the attribute names on EbayClient (e.g. client.buy_browse)
 API_MODULES = {
     "buy_browse": BuyBrowseApi,
     "sell_inventory": SellInventoryApi,
@@ -31,6 +33,9 @@ API_MODULES = {
     "sell_feed": SellFeedApi,
     "commerce_taxonomy": CommerceTaxonomyApi,
 }
+
+_client: EbayClient | None = None
+_client_lock = threading.Lock()
 
 # Map stringified annotations to JSON schema types
 _TYPE_MAP = {
@@ -48,56 +53,70 @@ def _annotation_to_type(ann_str: str) -> str:
 
 
 def _get_client() -> EbayClient:
-    """Create an EbayClient from environment variables."""
-    try:
-        client_id = os.environ["EBAY_CLIENT_ID"]
-        client_secret = os.environ["EBAY_CLIENT_SECRET"]
-    except KeyError as e:
-        raise RuntimeError(
-            f"Missing required environment variable {e}. "
-            "Set EBAY_CLIENT_ID and EBAY_CLIENT_SECRET."
-        ) from None
-    oauth = EbayOAuthClient(
-        client_id=client_id,
-        client_secret=client_secret,
-    )
-    sandbox = os.environ.get("EBAY_SANDBOX", "false").lower() in ("1", "true", "yes")
-    return EbayClient(oauth, sandbox=sandbox)
+    """Return a cached EbayClient, creating one on first call."""
+    global _client
+    if _client is not None:
+        return _client
+    with _client_lock:
+        if _client is not None:
+            return _client
+        try:
+            client_id = os.environ["EBAY_CLIENT_ID"]
+            client_secret = os.environ["EBAY_CLIENT_SECRET"]
+        except KeyError as e:
+            raise RuntimeError(
+                f"Missing required environment variable {e}. "
+                "Set EBAY_CLIENT_ID and EBAY_CLIENT_SECRET."
+            ) from e
+        oauth = EbayOAuthClient(
+            client_id=client_id,
+            client_secret=client_secret,
+        )
+        sandbox = os.environ.get("EBAY_SANDBOX", "false").lower() in ("1", "true", "yes")
+        _client = EbayClient(oauth, sandbox=sandbox)
+        return _client
 
 
 def _make_tool_fn(api_attr: str, method_name: str, params: list[dict]):
     """Build a closure that calls the SDK method with the right args."""
 
     def tool_fn(**kwargs: Any) -> str:
-        with _get_client() as client:
-            api = getattr(client, api_attr)
-            method = getattr(api, method_name)
-            # Split kwargs into positional and keyword based on param metadata
-            positional = []
-            keyword = {}
-            for p in params:
-                name = p["name"]
-                val = kwargs.get(name)
-                if val is None and name not in kwargs:
-                    if p["positional"]:
-                        if not p["optional"]:
-                            raise ValueError(
-                                f"Missing required parameter '{name}'"
-                            )
-                        positional.append(None)
-                    continue
-                # Parse JSON strings back to dicts/lists for object params
-                if p["type"] == "object" and isinstance(val, str):
+        client = _get_client()
+        api = getattr(client, api_attr)
+        method = getattr(api, method_name)
+        # Split kwargs into positional and keyword based on param metadata
+        positional: list[tuple[int, Any]] = []
+        keyword = {}
+        for idx, p in enumerate(params):
+            name = p["name"]
+            val = kwargs.get(name)
+            if val is None and name not in kwargs:
+                if p["positional"] and not p["optional"]:
+                    raise ValueError(
+                        f"Missing required parameter '{name}'"
+                    )
+                continue
+            # Parse JSON strings back to dicts/lists for object params
+            if p["type"] == "object" and isinstance(val, str):
+                try:
                     val = json.loads(val)
-                if p["positional"]:
-                    positional.append(val)
-                else:
-                    keyword[name] = val
-            # Trim trailing None values from positional args
-            while positional and positional[-1] is None:
-                positional.pop()
-            result = method(*positional, **keyword)
-            return json.dumps(result, default=str)
+                except json.JSONDecodeError as exc:
+                    raise ValueError(
+                        f"Parameter '{name}' must be valid JSON: {exc}"
+                    ) from exc
+            if p["positional"]:
+                positional.append((idx, val))
+            else:
+                keyword[name] = val
+        # Build positional arg list, filling gaps with None
+        pos_args: list[Any] = []
+        if positional:
+            max_idx = positional[-1][0]
+            pos_args = [None] * (max_idx + 1)
+            for idx, val in positional:
+                pos_args[idx] = val
+        result = method(*pos_args, **keyword)
+        return json.dumps(result, default=str)
 
     return tool_fn
 
@@ -107,9 +126,12 @@ def register_tools(mcp: FastMCP) -> int:
     count = 0
 
     for api_attr, api_cls in API_MODULES.items():
+        def _is_method(obj: object) -> bool:
+            return inspect.isfunction(obj) or inspect.ismethod(obj)
+
         methods = [
             (name, m)
-            for name, m in inspect.getmembers(api_cls, predicate=inspect.isfunction)
+            for name, m in inspect.getmembers(api_cls, predicate=_is_method)
             if not name.startswith("_")
         ]
 
